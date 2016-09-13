@@ -4,7 +4,7 @@ library(tidyverse)
 library(lsa)
 library(Matrix)
 
-# jobs_url <- read_csv("~/Dropbox/Final_Project_Shiny_App/jobs_url.csv")
+jobs_url <- read_csv("~/Dropbox/Final_Project_Shiny_App/jobs_url.csv")
 
 job_skill_count <- jobs %>%
   select(skills_fixed, id)

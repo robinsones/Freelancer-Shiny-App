@@ -9,8 +9,10 @@ dashboardPage(
     width = 450,
     fluidPage(
       textInput(inputId = "profile_text", label = "Enter Your Profile Text Here"),
-      tags$div(class = "form-group shiny-input-container", actionButton("goButton", "Submit")),
-      selectInput("profile_skills", "Your skills", popular_job_skills$skills_fixed, selected = NULL, multiple = TRUE),
+      tags$div(class = "form-group shiny-input-container", actionButton("profButton", "Submit")),
+      selectInput("profile_skills", "Your skills", popular_job_skills$skill_name, selected = NULL, multiple = TRUE),
+      tags$div(class = "form-group shiny-input-container", actionButton("skillButton", "Submit")),
+      selectInput("highest_degree", "Your Highest Degree", levels(unique(ds_job_history$highest_degree)), selected = NULL),
       fluidRow(
         column(6,
                selectInput("duration",

@@ -2,7 +2,8 @@ library(ggplot2)
 library(shiny)
 library(tidyverse)
 library(readr)
-
+library(stringr)
+library(DT)
 jobs_url <- jobs_url %>% 
   select(id, url) 
 
@@ -79,35 +80,39 @@ function(input, output, session) {
     # Filter data based on selectionss
     data <- jobs
     data <- pre_processing_data(data)
-    # get skill match
-    data <- data %>%
-      mutate(skill_match = map_dbl(skills_for_match, ~skill_match(input$profile_skills, .)))
-    
+      # get skill match
+      data <- data %>%
+        mutate(skill_match = map_dbl(skills_fixed, ~skill_match(input$profile_skills, .)))
     if (input$job_type != "All") {
-      data <- data[data$job_type == input$job_type,]
+      data <- data %>%
+       filter(job_type == input$job_type)
     }
     if (input$duration != "All") {
-      data <- data[data$duration == input$duration,]
+      data <- data %>% 
+        filter(duration == input$duration)
     }
     if (input$workload != "All") {
-      data <- data[data$workload == input$workload,]
+      data <- data %>%
+        filter(workload == input$workload)
     }
     if (input$past_hires >= 0) {
-      data <- data[data$past_hires >= input$past_hires,]
+      data <- data %>%
+        filter(past_hires >= input$past_hires)
     }
     if (input$feedback >= 0) {
-      data <- data[data$feedback >= input$feedback,]
+      data <- data %>%
+        filter(feedback >= input$feedback)
     }
     if (input$payment_verification_status != "All") {
-      data <- data[data$payment_verification_status == input$payment_verification_status,]
+      data <- data %>%
+        filter(payment_verification_status == input$payment_verification_status) 
     }
-
     data <- data %>% 
       select(title, snippet, overall_match, url, workload, duration, country, feedback, payment_verification_status, 
              skill_match, skills_fixed, id)
     values$df <- data
   })
-  observeEvent(input$goButton, {
+  observeEvent(input$profButton, {
     # get similarity data and join
     final_data <- values$df
     
@@ -142,7 +147,6 @@ function(input, output, session) {
       select(title, snippet, overall_match, url, workload, duration, country, feedback, payment_verification_status, 
              skill_match, skills_fixed, id) %>%
       arrange(desc(overall_match))
-    
     values$df <- final_data
   })
   output$table <- DT::renderDataTable(DT::datatable(values$df, colnames = c("Order", "Title", "Job Description Excerpt",
