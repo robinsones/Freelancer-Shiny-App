@@ -4,45 +4,43 @@ library(ggplot2)
 library(shiny)
 library(shinydashboard)
 dashboardPage(
-  dashboardHeader(),
+  dashboardHeader(title = "Finding Your Best Data Science Freelancing Job", titleWidth = 450),
   dashboardSidebar(
-    width = 400,
+    width = 450,
     fluidPage(
-      h4("Enter Your Profile Text Here"),
-      tags$style(type="text/css", "textarea {width:100%}"),
-      tags$textarea(id = 'profile_text', placeholder = 'Type here', rows = 8, ""),
-      # Create a new Row in the UI for selectInputs
+      textInput(inputId = "profile_text", label = "Enter Your Profile Text Here"),
+      tags$div(class = "form-group shiny-input-container", actionButton("goButton", "Submit")),
       selectInput("profile_skills", "Your skills", popular_job_skills$skills_fixed, selected = NULL, multiple = TRUE),
       fluidRow(
         column(6,
                selectInput("duration",
-                           "duration:",
+                           "Duration:",
                            c("All",
                              unique(as.character(jobs$duration))))
         ),
         column(6,
                selectInput("job_type",
-                           "job_type:",
+                           "Job Type:",
                            c("All",
                              unique(as.character(jobs$job_type))))
         ),
         column(6, 
-               numericInput('feedback', 'Minimum Feedback Score', 0,
+               numericInput('feedback', 'Minimum Feedback Score:', 0,
                             min = 0, max = 5, step = .1)
         ),
         column(6, 
-               numericInput('past_hires', 'Minimum Number of Past hires', 0,
+               numericInput('past_hires', 'Minimum Number of Past hires:', 0,
                             min = 0, max = 500, step = 1)
         ),
         column(6,
                selectInput("payment_verification_status",
-                           "payment_verification_status:",
+                           "Payment Verified:",
                            c("All",
                              "VERIFIED"))
         ),
         column(6,
                selectInput("workload",
-                           "workload:",
+                           "Workload:",
                            c("All",
                              unique(as.character(jobs$workload))))
         )
