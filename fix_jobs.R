@@ -271,6 +271,23 @@ calculate_tfidf <- function(jobs){
   return(tfidf_vector)
 }
 
+jdf <- jobs %>%
+  mutate(skills_fixed = (gsub("\\[|\\]|'", "", skills))) %>%
+  mutate(skills_fixed = as.list(strsplit(skills_fixed, ","))) %>%
+  select(-1) %>%
+  mutate(feedback = round(feedback, 2)) %>%
+  mutate(snippet_length = nchar(snippet)) %>%
+  filter(snippet_length > 100) %>% 
+  mutate(overall_match = 0) %>%
+  mutate(snippet = paste0(str_sub(snippet, 1, 300), "...")) %>%
+  left_join(jobs_url)
 
 
 
+jdf %>%
+  mutate(skill_match = map_dbl(skills_fixed, ~skill_match(c("javascript", "excel-vba"), .))) %>%
+  select(skill_match, skills_fixed) %>%
+  arrange(desc(skill_match))
+
+library(foreach)
+jdk <- jdf %>%  mutate(skills_fixed = lapply(skills_fixed, trim_leading)) 

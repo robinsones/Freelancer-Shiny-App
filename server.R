@@ -47,11 +47,14 @@ skill_match <- function(person_skills, job_skills = list()){
   return (per_skill_have)
 }
 
+trim_leading <- function (x)  sub("^\\s+", "", x)
+
 # delete first column, round feedback, only look at jobs with more than 100 characters
 pre_processing_data <- function(jobs_data){
   jobs_data_final <- jobs_data %>%
     mutate(skills_fixed = (gsub("\\[|\\]|'", "", skills))) %>%
     mutate(skills_fixed = as.list(strsplit(skills_fixed, ","))) %>%
+    mutate(skills_for_match = lapply(skills_fixed, trim_leading)) %>%
     select(-1) %>%
     mutate(feedback = round(feedback, 2)) %>%
     mutate(snippet_length = nchar(snippet)) %>%
@@ -61,6 +64,8 @@ pre_processing_data <- function(jobs_data){
     left_join(jobs_url)
   return(jobs_data_final)
 }
+
+
 
 # make a function to normalize a column 
 normalit<-function(m){
@@ -75,10 +80,8 @@ function(input, output, session) {
     data <- jobs
     data <- pre_processing_data(data)
     # get skill match
-    profile_skills <- input$profile_skills
-    
     data <- data %>%
-      mutate(skill_match = map_dbl(skills_fixed, ~skill_match(profile_skills, .)))
+      mutate(skill_match = map_dbl(skills_for_match, ~skill_match(input$profile_skills, .)))
     
     if (input$job_type != "All") {
       data <- data[data$job_type == input$job_type,]
@@ -101,7 +104,7 @@ function(input, output, session) {
 
     data <- data %>% 
       select(title, snippet, overall_match, url, workload, duration, country, feedback, payment_verification_status, 
-             skills_fixed, skill_match, id)
+             skill_match, skills_fixed, id)
     values$df <- data
   })
   observeEvent(input$goButton, {
@@ -136,15 +139,15 @@ function(input, output, session) {
       mutate(overall_match = normalized_similarity + .5*normalized_skill_match)
     
     final_data <- final_data %>% 
-      select(title, snippet, url, overall_match, workload, duration, country, feedback, payment_verification_status, 
-             skills_fixed, skill_match, id) %>%
+      select(title, snippet, overall_match, url, workload, duration, country, feedback, payment_verification_status, 
+             skill_match, skills_fixed, id) %>%
       arrange(desc(overall_match))
     
     values$df <- final_data
   })
   output$table <- DT::renderDataTable(DT::datatable(values$df, colnames = c("Order", "Title", "Job Description Excerpt",
-                                                                            "Overall Match", ""Url", Workload", "Duration", 
+                                                                            "Overall Match", "Url","Workload", "Duration", 
                                                                             "Country", "Average Feedback", "Payment Verified", 
-                                                                            "Skills", "Skill Match", "ID")))
+                                                                            "Skill Match","Skills", "ID")))
 }
 
