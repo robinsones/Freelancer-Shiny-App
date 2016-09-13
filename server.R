@@ -4,8 +4,62 @@ library(tidyverse)
 library(readr)
 library(stringr)
 library(DT)
+
 jobs_url <- jobs_url %>% 
   select(id, url) 
+
+#### tfidf on jobs
+
+all_titles <- ds_job_history %>%
+  distinct(title)
+
+# add id
+all_titles <- all_titles %>%
+  mutate(id = rownames(all_titles))
+
+# add id back to ds_job_history
+ds_job_history<- ds_job_history %>% 
+  left_join(all_titles)
+
+title_words <- all_titles %>% 
+  unnest_tokens(word, title) %>% 
+  count(id, word, sort = TRUE) %>% 
+  ungroup()
+
+# select words appearing less than 6 times and no stop words
+rare_title_words <- title_words %>% 
+  count(word) %>% 
+  filter(nn < 100)
+
+total_title_words <- title_words %>%  
+  group_by(id) %>% 
+  summarize(total = sum(n))
+
+title_words <- title_words %>% 
+  left_join(total_title_words) %>%
+  anti_join(stop_words) %>% 
+  anti_join(rare_title_words)
+
+# get tfidf vectors
+tfidf_titles <- title_words %>% 
+  bind_tf_idf(word, id, n) %>% 
+  group_by(id) %>%
+  mutate(tf_idf_norm = tf_idf / sqrt(sum(tf_idf ^ 2))) %>%
+  ungroup()
+
+# we need to keep mapping word, idf
+word_title_idf <- tfidf_titles %>%
+  distinct(word, idf)
+
+#### Now that we have skills, pick the job history and education
+
+job_counts <- ds_job_history %>%
+  distinct(skill_name, id) %>%
+  group_by(id) %>%
+  summarize(job_total = n())
+
+ds_job_history <- ds_job_history %>%
+  left_join(job_counts)
 
 ### Make tfidf matrix
 
@@ -55,18 +109,16 @@ pre_processing_data <- function(jobs_data){
   jobs_data_final <- jobs_data %>%
     mutate(skills_fixed = (gsub("\\[|\\]|'", "", skills))) %>%
     mutate(skills_fixed = as.list(strsplit(skills_fixed, ","))) %>%
-    mutate(skills_for_match = lapply(skills_fixed, trim_leading)) %>%
     select(-1) %>%
     mutate(feedback = round(feedback, 2)) %>%
     mutate(snippet_length = nchar(snippet)) %>%
     filter(snippet_length > 100) %>% 
     mutate(overall_match = 0) %>%
+    mutate(skill_match = 0) %>%
     mutate(snippet = paste0(str_sub(snippet, 1, 300), "...")) %>%
     left_join(jobs_url)
   return(jobs_data_final)
 }
-
-
 
 # make a function to normalize a column 
 normalit<-function(m){
@@ -81,8 +133,6 @@ function(input, output, session) {
     data <- jobs
     data <- pre_processing_data(data)
       # get skill match
-      data <- data %>%
-        mutate(skill_match = map_dbl(skills_fixed, ~skill_match(input$profile_skills, .)))
     if (input$job_type != "All") {
       data <- data %>%
        filter(job_type == input$job_type)
@@ -111,6 +161,16 @@ function(input, output, session) {
       select(title, snippet, overall_match, url, workload, duration, country, feedback, payment_verification_status, 
              skill_match, skills_fixed, id)
     values$df <- data
+  })
+  observeEvent(input$skillButton, {
+    final_data <- values$df
+    
+    final_data <- final_data %>%
+      mutate(skills_for_match = lapply(skills_fixed, trim_leading)) %>%
+      mutate(skill_match = map_dbl(skills_for_match, ~skill_match(input$profile_skills, .))) %>%
+      select(title, snippet, overall_match, url, workload, duration, country, feedback, payment_verification_status, 
+             skill_match, skills_fixed, id)
+    values$df <- final_data
   })
   observeEvent(input$profButton, {
     # get similarity data and join

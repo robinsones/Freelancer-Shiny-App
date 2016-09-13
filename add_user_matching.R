@@ -79,12 +79,55 @@ job_counts <- ds_job_history %>%
 ds_job_history <- ds_job_history %>%
   left_join(job_counts)
 
-ds_job_history %>%
-  filter(highest_degree = input$highest_degree) %>%
+### filter down job history 
+filtered_jobs <- ds_job_history %>%
+  filter(highest_degree == "Bachelors") %>%
   # at least one skill is in that job
-  distinct(skill_name, id) %>%
-  filter(skill_name %in% my_skills)
-  
+  filter(skill_name %in% c("java", "python", "r", "data-entry", "machine-learning"))
+
+# have at 20% of the skills
+"filtered_jobs <- filtered_jobs %>%
+  count(id) %>%
+  mutate(percent_have = job_total) %>%
+  filter(percent_have >= .2)
+"  
+
+tfidf_titles_filter <- tfidf_titles %>%
+  filter(id %in% filtered_jobs$id)
+
+# get mean tf_idf for these jobs 
+
+mean_tfidf <- tfidf_titles_filter %>%
+  group_by(word) %>%
+  summarize(mean = mean(tf_idf_norm))
+
+#### get tfidf representation of current jobs
+
+jobs_and_title <- jobs %>%
+  select(title, id)
+
+current_jobs_tfidf <- jobs_and_title %>%
+  unnest_tokens(word, title) %>%
+  group_by(id) %>%
+  count(word) %>%
+  inner_join(word_title_idf) %>%
+  mutate(tf = n/sum(n)) %>%
+  mutate(tf_idf = tf * idf) %>%
+  mutate(tf_idf_norm = tf_idf / sqrt(sum(tf_idf ^ 2))) %>%
+  ungroup()
+
+#### Finally, combine tfidf of current jobs with old one
+
+title_cosine_similarity <- current_jobs_tfidf %>%
+  select(id, word, document_tfidf = tf_idf_norm) %>%
+  inner_join(mean_tfidf, by = "word") %>%
+  select(id, word, old_jobs_tfidf = mean, document_tfidf) %>%
+  group_by(id) %>%
+  summarize(cosine_similarity = sum(old_jobs_tfidf * document_tfidf))
+
+
+
+### get tf_idf of every job
 
   ds_job_history %>% group_by(title) %>% summarize(skill_name)
 
