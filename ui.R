@@ -9,29 +9,29 @@ dashboardPage(
     width = 450,
     fluidPage(
       textInput(inputId = "profile_text", label = "Enter Your Profile Text Here"),
-      tags$div(class = "form-group shiny-input-container", actionButton("profButton", "Submit")),
       selectInput("profile_skills", "Your skills", popular_job_skills$skill_name, selected = NULL, multiple = TRUE),
-      tags$div(class = "form-group shiny-input-container", actionButton("skillButton", "Submit")),
+      tags$div(class = "form-group shiny-input-container", actionButton("skillProfButton", "Submit")),
       selectInput("highest_degree", "Your Highest Degree", levels(unique(ds_job_history$highest_degree)), selected = NULL),
       fluidRow(
         column(6,
                selectInput("duration",
                            "Duration:",
                            c("All",
-                             unique(as.character(jobs$duration))))
+                             "Less than 1 week", "Less than 1 month", "1 to 3 months", "3 to 6 months", 
+                             "More than 6 months"))
         ),
         column(6,
                selectInput("job_type",
                            "Job Type:",
                            c("All",
-                             unique(as.character(jobs$job_type))))
+                            unique(as.character(jobs$job_type))))
         ),
         column(6, 
-               numericInput('feedback', 'Minimum Feedback Score:', 0,
+               numericInput('feedback', 'Min. Feedback Score:', 0,
                             min = 0, max = 5, step = .1)
         ),
         column(6, 
-               numericInput('past_hires', 'Minimum Number of Past hires:', 0,
+               numericInput('past_hires', 'Min. Number of Past Hires:', 0,
                             min = 0, max = 500, step = 1)
         ),
         column(6,

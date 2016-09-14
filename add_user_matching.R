@@ -170,3 +170,4 @@ jobs %>%
 
 # if review count zero change feedback to NA
 mutate(feedback = ifelse(reviews_count == 0, NA, feedback)) 
+
