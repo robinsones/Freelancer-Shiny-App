@@ -8,7 +8,7 @@ dashboardPage(
   dashboardSidebar(
     width = 450,
     fluidPage(
-      textInput(inputId = "profile_text", label = "Enter Your Profile Text Here"),
+      textInput(inputId = "profile_text", label = "Your Profile Text"),
       selectInput("profile_skills", "Your skills", popular_job_skills$skill_name, selected = NULL, multiple = TRUE),
       tags$div(class = "form-group shiny-input-container", actionButton("skillProfButton", "Submit")),
       selectInput("highest_degree", "Your Highest Degree", levels(unique(ds_job_history$highest_degree)), selected = NULL),
